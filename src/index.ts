@@ -1,9 +1,16 @@
 import fastify from 'fastify';
-
+import mercurius from 'mercurius';
+import db from './config/index';
+import schema from './graphql/schema';
+import resolvers from './graphql/resolver';
 
 const PORT = process.env.PORT || 3000;
+const MONGODB_URI = process.env.MONGODBI_URI || 'mongodb://localhost:27017';
 
 const app = fastify({ logger: true });
+
+app.register(db, {uri: 'mongodb://localhost:27017'})
+app.register(mercurius, { schema, resolvers, graphiql: true })
 
 app.get('/', async (request, reply) => {
   return { hello: 'world' };

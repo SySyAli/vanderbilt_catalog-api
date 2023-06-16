@@ -19,7 +19,7 @@ const courseCatalogSchema = new mongoose.Schema({
   },
   hours: {
     type: String,
-    required: false,
+    required: true,
   },
   description: {
     type: String,
