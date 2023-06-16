@@ -11,6 +11,6 @@
 		"moduleResolution": "node",
 		"strictNullChecks": true
 	},
-	"include": ["src/**/*", ".eslintrc.cjs"],
+	"include": ["src/**/*", ".eslintrc"],
 	"exclude": ["node_modules", ".vscode"]
 }
