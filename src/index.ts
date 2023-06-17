@@ -34,13 +34,19 @@ client.getTask(0);
 app.get('/', async (request, reply) => {
   return { hello: 'world' };
 });
-/*
-app.get('/search', async (request, reply) => {
-  const client = new MeiliSearch({ host: 'http://localhost:7700' });
-  const res = await client.index('courses').search(request.query.q);
-  return res;
-}
-*/
+
+app.get('/search/:q', async (request, reply) => {
+  console.log(request.params);
+  const { q }: any = request.params;
+  if (q) {
+    const courses = await client.index('courses').search(q);
+    return { courses };
+  } else {
+    return { courses: {} };
+  }
+});
+
+
 // figure out how to use PORT (error from process.env.PORT)
 app.listen({ port: 3000 }, (err, address) => {
   if (err) {
