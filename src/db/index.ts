@@ -2,17 +2,15 @@
 import axios from 'axios';
 import mongoose from 'mongoose';
 import courseCatalog from '../models/courseCatalog';
-
-const url = 'https://vanderbilt.kuali.co/api/v1/catalog/courses/626313688d6920f47a0d527e/';
-
 // Gets the courses from the Vanderbilt API and calls getCourse for each course
-const getCourses = async () => {
+const getCourses = async ({VANDERBILT_API_CATALOG, VANDERBILT_API_COURSE}) => {
   try {
+    const url = VANDERBILT_API_CATALOG;
     const response = await axios.get(url);
     //console.log(response.data);
     for (let i = 0; i < response.data.length; i++) {
       const course = response.data[i];
-      getCourse(course);
+      getCourse(course, VANDERBILT_API_COURSE);
       await sleep(1000);
       //const newCourse = new courseCatalog(course);
       //await newCourse.save();
@@ -22,7 +20,7 @@ const getCourses = async () => {
   }
 };
 // Formats information into JSON and calls addCourseToMongo to add to MongoDB
-const getCourse = async (course) => {
+const getCourse = async (course, VANDERBILT_API_COURSE) => {
   try {
     const courseNumber = course.__catalogCourseId.replace(course.subjectCode.name, '');
     const courseID = course.subjectCode.name + ' ' + courseNumber;
@@ -35,17 +33,17 @@ const getCourse = async (course) => {
       description: undefined,
     };
     //console.log(courseJSON);
-    addCourseToMongo(courseJSON, course.pid);
+    addCourseToMongo(courseJSON, course.pid, VANDERBILT_API_COURSE);
   } catch (err) {
     console.error(err);
   }
 };
 
 // Calls the Vanderbilt API to get the course description and uses a regex expression to detemine the course hours
-const addCourseToMongo = async (COURSE_JSON, COURSE_PID) => {
+const addCourseToMongo = async (COURSE_JSON, COURSE_PID, VANDERBILT_API_COURSE) => {
   try {
-    const baseURL = 'https://vanderbilt.kuali.co/api/v1/catalog/course/626313688d6920f47a0d527e/';
-    const url = baseURL + COURSE_PID;
+    
+    const url = VANDERBILT_API_COURSE + COURSE_PID;
     // add delay to avoid rate limit
     const response = await axios.get(url);
     const course_description = response.data.description;

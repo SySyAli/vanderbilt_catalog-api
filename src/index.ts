@@ -6,24 +6,75 @@ import resolvers from './graphql/resolver';
 import { MeiliSearch } from 'meilisearch';
 import courseCatalog from './models/courseCatalog';
 import getCourses from './db';
+import fastifyEnv from '@fastify/env';
 
-const PORT = process.env.PORT || 3000;
-const MONGODB_URI = process.env.MONGODBI_URI || 'mongodb://localhost:27017';
+const envSchema = {
+  type: 'object',
+  required: ['MONGODB_URI', 'MEILISEARCH_HOST', 'VANDERBILT_API_CATALOG', 'VANDERBILT_API_COURSE'],
+  properties: {
+    PORT: {
+      type: 'number',
+      default: 3000,
+    },
+    MONGODB_URI: {
+      type: 'string',
+    },
+    VANDERBILT_API_CATALOG:{
+      type: 'string',
+    },
+    VANDERBILT_API_COURSE:{
+      type: 'string',
+    },
+    MEILISEARCH_HOST: {
+      type: 'string',
+    },
+  },
+};
+const options = {
+  confKey: 'config',
+  dotenv: true,
+  schema: envSchema,
+  data: process.env,
+};
+
+const PORT: any = process.env.PORT || 3000;
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017';
+const MEILISEARCH_HOST = process.env.MEILISEARCH_HOST || 'http://localhost:7700';
+const vanderbiltINFO = {
+  VANDERBILT_API_CATALOG: process.env.VANDERBILT_API_CATALOG,
+  VANDERBILT_API_COURSE: process.env.VANDERBILT_API_COURSE,
+}
+
 
 const app = fastify({ logger: true });
 
 // setting MeiliSearch client
-const client = new MeiliSearch({ host: 'http://localhost:7700' });
 
-app.register(db, { uri: 'mongodb://localhost:27017' });
-app.register(mercurius, { schema, resolvers, graphiql: true });
+app.register(db, { uri: MONGODB_URI });
+// make graphiql true to enable graphiql interface
+app.register(mercurius, { schema, resolvers, graphiql: false });
+app.register(fastifyEnv, options);
 
+const start = async () => {
+  try {
+    // for fastifyEnv to work
+    await app.ready();
+    console.log(process.env);
+  } catch (err) {
+    app.log.error(err);
+    process.exit(1);
+  }
+};
+start();
+
+// setting up MeiliSearch client
+const client = new MeiliSearch({ host: MEILISEARCH_HOST });
 // adding courses to meilisearch index
 const addCoursesToIndex = async () => {
   const courses = await courseCatalog.find({});
   if (!courses) {
     // if db is empty, add courses from db
-    await getCourses();
+    await getCourses(vanderbiltINFO);
   }
   const res = await client.index('courses').addDocuments(courses);
   console.log(res);
@@ -46,9 +97,8 @@ app.get('/search/:q', async (request, reply) => {
   }
 });
 
-
 // figure out how to use PORT (error from process.env.PORT)
-app.listen({ port: 3000 }, (err, address) => {
+app.listen({ port: PORT }, (err, address) => {
   if (err) {
     console.error(err);
     process.exit(1);
