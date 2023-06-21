@@ -7,6 +7,7 @@ import { MeiliSearch } from 'meilisearch';
 import courseCatalog from './models/courseCatalog';
 import getCourses from './db';
 import fastifyEnv from '@fastify/env';
+import cors from '@fastify/cors';
 
 const envSchema = {
   type: 'object',
@@ -19,10 +20,10 @@ const envSchema = {
     MONGODB_URI: {
       type: 'string',
     },
-    VANDERBILT_API_CATALOG:{
+    VANDERBILT_API_CATALOG: {
       type: 'string',
     },
-    VANDERBILT_API_COURSE:{
+    VANDERBILT_API_COURSE: {
       type: 'string',
     },
     MEILISEARCH_HOST: {
@@ -43,20 +44,23 @@ const MEILISEARCH_HOST = process.env.MEILISEARCH_HOST || 'http://localhost:7700'
 const vanderbiltINFO = {
   VANDERBILT_API_CATALOG: process.env.VANDERBILT_API_CATALOG,
   VANDERBILT_API_COURSE: process.env.VANDERBILT_API_COURSE,
-}
-
+};
 
 const app = fastify({ logger: true });
 
-// setting MeiliSearch client
-
-app.register(db, { uri: MONGODB_URI });
-// make graphiql true to enable graphiql interface
-app.register(mercurius, { schema, resolvers, graphiql: false });
-app.register(fastifyEnv, options);
-
-const start = async () => {
+const register = async () => {
   try {
+    await app.register(cors, {
+      origin: '*',
+      methods: ['GET', 'PUT', 'POST', 'DELETE', 'OPTIONS'],
+      allowedHeaders: ['Content-Type', 'Authorization'],
+    });
+
+    await app.register(db, { uri: MONGODB_URI });
+    // make graphiql true to enable graphiql interface
+    await app.register(mercurius, { schema, resolvers, graphiql: false });
+    await app.register(fastifyEnv, options);
+
     // for fastifyEnv to work
     await app.ready();
     console.log(process.env);
@@ -65,7 +69,7 @@ const start = async () => {
     process.exit(1);
   }
 };
-start();
+register();
 
 // setting up MeiliSearch client
 const client = new MeiliSearch({ host: MEILISEARCH_HOST });
@@ -91,6 +95,7 @@ app.get('/search/:q', async (request, reply) => {
   const { q }: any = request.params;
   if (q) {
     const courses = await client.index('courses').search(q);
+    console.log(courses);
     return { courses };
   } else {
     return { courses: {} };
