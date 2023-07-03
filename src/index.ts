@@ -17,7 +17,13 @@ const app = fastify({ logger: true });
 
 const envSchema = {
   type: 'object',
-  required: ['MONGODB_URI', 'PORT', 'MEILISEARCH_HOST', 'VANDERBILT_API_CATALOG', 'VANDERBILT_API_COURSE'],
+  required: [
+    'MONGODB_URI',
+    'PORT',
+    'MEILISEARCH_HOST',
+    'VANDERBILT_API_CATALOG',
+    'VANDERBILT_API_COURSE',
+  ],
   properties: {
     PORT: {
       type: 'number',
@@ -43,9 +49,6 @@ const options = {
   schema: envSchema,
   data: process.env,
 };
-
-
-
 
 const register = async () => {
   try {
@@ -80,7 +83,6 @@ const register = async () => {
         },
       ],
     });
-
   } catch (err) {
     app.log.error(err);
     process.exit(1);
@@ -104,9 +106,8 @@ const addCoursesToIndex = async () => {
   */
   const courses = await courseCatalog.find({});
   const res = await client.index('courses').addDocuments(courses);
-  console.log('courses added to index')
+  console.log('courses added to index');
   console.log(res);
-  
 };
 
 addCoursesToIndex();
@@ -130,10 +131,9 @@ const PORT: any = process.env.PORT || 3000;
 (async () => {
   try {
     // figure out how to use PORT (error from process.env.PORT)
-   
-    console.log(process.env)
+
+    console.log(process.env);
     app.listen({ port: PORT }, (err, address) => {
-      
       if (err) {
         console.error(err);
         process.exit(1);
@@ -146,16 +146,13 @@ const PORT: any = process.env.PORT || 3000;
   }
 })();
 
-
 const start = async () => {
   try {
-    await app.listen(PORT)
-    app.log.info(`server listening on ${app.server.address()}`)
-
-
+    await app.listen(PORT);
+    app.log.info(`server listening on ${app.server.address()}`);
   } catch (err) {
     app.log.error(err);
     process.exit(1);
   }
-}
+};
 start();
