@@ -3,15 +3,18 @@ import axios from 'axios';
 import mongoose from 'mongoose';
 import courseCatalog from '../models/courseCatalog';
 // Gets the courses from the Vanderbilt API and calls getCourse for each course
-const getCourses = async ({VANDERBILT_API_CATALOG, VANDERBILT_API_COURSE}) => {
+const getCourses = async ({ VANDERBILT_API_CATALOG, VANDERBILT_API_COURSE }) => {
   try {
+    console.log('Getting courses');
+    //console.log(VANDERBILT_API_CATALOG)
+    //console.log(VANDERBILT_API_COURSE)
     const url = VANDERBILT_API_CATALOG;
     const response = await axios.get(url);
     //console.log(response.data);
     for (let i = 0; i < response.data.length; i++) {
       const course = response.data[i];
-      getCourse(course, VANDERBILT_API_COURSE);
       await sleep(1000);
+      getCourse(course, VANDERBILT_API_COURSE);
       //const newCourse = new courseCatalog(course);
       //await newCourse.save();
     }
@@ -42,12 +45,12 @@ const getCourse = async (course, VANDERBILT_API_COURSE) => {
 // Calls the Vanderbilt API to get the course description and uses a regex expression to detemine the course hours
 const addCourseToMongo = async (COURSE_JSON, COURSE_PID, VANDERBILT_API_COURSE) => {
   try {
-    
     const url = VANDERBILT_API_COURSE + COURSE_PID;
     // add delay to avoid rate limit
     const response = await axios.get(url);
     const course_description = response.data.description;
     COURSE_JSON.description = course_description;
+    //console.log(COURSE_JSON);
 
     // use regex to determine hours
     const regex = /\[.*\]/i;
@@ -60,6 +63,7 @@ const addCourseToMongo = async (COURSE_JSON, COURSE_PID, VANDERBILT_API_COURSE) 
     }
     // check is course is already in database
     const course = await courseCatalog.find({ code: COURSE_JSON.code });
+    //console.log(course);
     if (course) {
       console.log(COURSE_JSON.code + ': ' + 'Course already in database');
       return;
@@ -73,6 +77,7 @@ const addCourseToMongo = async (COURSE_JSON, COURSE_PID, VANDERBILT_API_COURSE) 
         hours: COURSE_JSON.hours,
         description: COURSE_JSON.description,
       });
+
       const addedCourse = await newCourse.save();
       console.log(addedCourse);
     }
@@ -84,6 +89,22 @@ const addCourseToMongo = async (COURSE_JSON, COURSE_PID, VANDERBILT_API_COURSE) 
 async function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
+
+/*
+// connect to mongoDB; uncomment to run
+const db = async () => {
+  await mongoose.connect('mongodb://localhost:27017');
+
+  await getCourses({
+    VANDERBILT_API_CATALOG:
+      '',
+    VANDERBILT_API_COURSE:
+      '',
+  });
+};
+db()
+*/
+
 /*
 // function to remove brackets from hour property in database 
 const removeBrackets = async () => {

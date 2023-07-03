@@ -8,10 +8,16 @@ import courseCatalog from './models/courseCatalog';
 import getCourses from './db';
 import fastifyEnv from '@fastify/env';
 import cors from '@fastify/cors';
+import fastifyCron from 'fastify-cron';
+
+// TODO: figure out how to get the cron job to run every 30 seconds
+// TODO: add mongodb atlas
+
+const app = fastify({ logger: true });
 
 const envSchema = {
   type: 'object',
-  required: ['MONGODB_URI', 'MEILISEARCH_HOST', 'VANDERBILT_API_CATALOG', 'VANDERBILT_API_COURSE'],
+  required: ['MONGODB_URI', 'PORT', 'MEILISEARCH_HOST', 'VANDERBILT_API_CATALOG', 'VANDERBILT_API_COURSE'],
   properties: {
     PORT: {
       type: 'number',
@@ -38,15 +44,8 @@ const options = {
   data: process.env,
 };
 
-const PORT: any = process.env.PORT || 3000;
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017';
-const MEILISEARCH_HOST = process.env.MEILISEARCH_HOST || 'http://localhost:7700';
-const vanderbiltINFO = {
-  VANDERBILT_API_CATALOG: process.env.VANDERBILT_API_CATALOG,
-  VANDERBILT_API_COURSE: process.env.VANDERBILT_API_COURSE,
-};
 
-const app = fastify({ logger: true });
+
 
 const register = async () => {
   try {
@@ -55,15 +54,33 @@ const register = async () => {
       methods: ['GET', 'PUT', 'POST', 'DELETE', 'OPTIONS'],
       allowedHeaders: ['Content-Type', 'Authorization'],
     });
+    await app.register(fastifyEnv, options);
+    await app.after();
+
+    // This env works
+    console.log(process.env);
+
+    const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017';
 
     await app.register(db, { uri: MONGODB_URI });
+
     // make graphiql true to enable graphiql interface
     await app.register(mercurius, { schema, resolvers, graphiql: false });
-    await app.register(fastifyEnv, options);
 
-    // for fastifyEnv to work
-    await app.ready();
-    console.log(process.env);
+    console.log('task 0');
+    // register fastify-cron and create a cron job that will run every 30 seconds
+    app.register(fastifyCron, {
+      jobs: [
+        {
+          name: 'every-30-seconds',
+          cronTime: '* * * * * *',
+          onTick: () => {
+            console.log('running a task every 30 seconds');
+          },
+        },
+      ],
+    });
+
   } catch (err) {
     app.log.error(err);
     process.exit(1);
@@ -72,19 +89,27 @@ const register = async () => {
 register();
 
 // setting up MeiliSearch client
+const MEILISEARCH_HOST = process.env.MEILISEARCH_HOST || 'http://localhost:7700';
+console.log({ MEILISEARCH_HOST });
 const client = new MeiliSearch({ host: MEILISEARCH_HOST });
+
 // adding courses to meilisearch index
 const addCoursesToIndex = async () => {
+  console.log('adding courses to index');
+  /*
+  await getCourses({
+    VANDERBILT_API_CATALOG: process.env.VANDERBILT_API_CATALOG,
+    VANDERBILT_API_COURSE: process.env.VANDERBILT_API_COURSE,
+  });
+  */
   const courses = await courseCatalog.find({});
-  if (!courses) {
-    // if db is empty, add courses from db
-    await getCourses(vanderbiltINFO);
-  }
   const res = await client.index('courses').addDocuments(courses);
+  console.log('courses added to index')
   console.log(res);
+  
 };
+
 addCoursesToIndex();
-client.getTask(0);
 
 app.get('/', async (request, reply) => {
   return { hello: 'world' };
@@ -101,12 +126,36 @@ app.get('/search/:q', async (request, reply) => {
     return { courses: {} };
   }
 });
-
-// figure out how to use PORT (error from process.env.PORT)
-app.listen({ port: PORT }, (err, address) => {
-  if (err) {
+const PORT: any = process.env.PORT || 3000;
+(async () => {
+  try {
+    // figure out how to use PORT (error from process.env.PORT)
+   
+    console.log(process.env)
+    app.listen({ port: PORT }, (err, address) => {
+      
+      if (err) {
+        console.error(err);
+        process.exit(1);
+      }
+      app.cron.startAllJobs();
+      console.log(`Server listening at ${address}`);
+    });
+  } catch (err) {
     console.error(err);
+  }
+})();
+
+
+const start = async () => {
+  try {
+    await app.listen(PORT)
+    app.log.info(`server listening on ${app.server.address()}`)
+
+
+  } catch (err) {
+    app.log.error(err);
     process.exit(1);
   }
-  console.log(`Server listening at ${address}`);
-});
+}
+start();
