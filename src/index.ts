@@ -13,8 +13,10 @@ import fastifyCron from 'fastify-cron';
 // TODO: figure out how to get the cron job to run every 30 seconds
 // TODO: add mongodb atlas
 
+// Creates the fastify instance
 const app = fastify({ logger: true });
 
+// Schema for .env var
 const envSchema = {
   type: 'object',
   required: [
@@ -50,6 +52,7 @@ const options = {
   data: process.env,
 };
 
+// Handles the registration of cors, fastify-env, fastify-cron, and mercurius
 const register = async () => {
   try {
     await app.register(cors, {
@@ -112,6 +115,8 @@ const addCoursesToIndex = async () => {
 
 addCoursesToIndex();
 
+
+// API ENDPOINTS
 app.get('/', async (request, reply) => {
   return { hello: 'world' };
 });
@@ -127,6 +132,8 @@ app.get('/search/:q', async (request, reply) => {
     return { courses: {} };
   }
 });
+
+
 const PORT: any = process.env.PORT || 3000;
 (async () => {
   try {
