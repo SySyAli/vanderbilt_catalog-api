@@ -1,4 +1,12 @@
-# vanderbilt_catalog-api
+# Vanderbilt Catalog API
+<p align='center'>
+   <img src='https://img.shields.io/badge/MongoDB-darkgreen?style=for-the-badge&logo=mongodb&logoColor=white'>
+   <img src='https://img.shields.io/badge/Mongoose-red?style=for-the-badge&logo=mongoose&logoColor=white'>
+   <img src='https://img.shields.io/badge/Fastify-orange?style=for-the-badge&logo=fastify&logoColor=white'>
+   <img src='https://img.shields.io/badge/GraphQL-%23e535ab?style=for-the-badge&logo=graphql&logoColor=white'>
+   <img src='https://img.shields.io/badge/Node.js-darkgreen?style=for-the-badge&logo=nodedotjs&logoColor=white'>
+   <img src='https://img.shields.io/badge/Typescript-blue?style=for-the-badge&logo=typescript&logoColor=white'>
+</p>
 
 This repository contains code that provides a GraphQL API and a search API using MeiliSearch. It also creates the Vanderbilt Course Catalog database using MongoDB and the Vanderbilt API. Fastify is used to create the server and Mercurius is used for to create the GraphQL endpoints.
 
@@ -9,7 +17,7 @@ To install and run this project, follow these steps:
 1. Clone the repository:
 
    ```bash
-   git clone https://github.com/your-username/your-repo.git
+   git clone https://github.com/SySyAli/vanderbilt_catalog-api.git
    ```
 
 2. Install the dependencies:
